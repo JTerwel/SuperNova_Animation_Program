@@ -1,0 +1,60 @@
+Name:		ZTF18abmxfrc
+loc:		252.7534888 25.8759437
+mjd:		58360 - 58361, 58390 - 58392, 58480 - 58740
+query:		fid=2 and (obsjd BETWEEN dates)
+within:		0.01 deg
+mjd lc:		58300 - 58800
+t frame:	500 ms
+cutout:		41x41
+min visible:	9x9
+central region:	5x5
+save name:	ZTF18abmxfrc_late_final.mp4
+------------------------------------------------------------
+Name:		ZTF18aaykmzg
+loc:		224.8783373 28.1829881
+mjd:		58276 - 58281, 58760 - 58800
+query:		fid=2 and (obsjd BETWEEN dates)
+within:		0.01 deg
+mjd lc:		58250 - 58800
+t frame:	500 ms
+cutout:		41x41
+min visible:	9x9
+central region:	5x5
+save name:	ZTF18aaykmzg_late.mp4
+------------------------------------------------------------
+Name:		ZTF18aazhwnh
+loc:		233.0147827 23.5170546
+mjd:		58288 - 58292, 58360 - 58770
+query:		fid=2 and BETWEEN dates
+within:		0.01 deg
+mjd lc:		58250 - 58800
+t frame:	500 ms
+cutout:		41x41
+min visible:	9x9
+central region:	5x5
+save name:	ZTF18aazhwnh_late.mp4
+------------------------------------------------------------
+Name:		ZTF18acbzojv
+loc:		155.6174639 36.5996279
+mjd:		58420 - 58770
+query:		fid=2 and BETWEEN dates
+within:		0.01 deg
+mjd lc:		58400 - 58800
+t frame:	500 ms
+cutout:		23x23
+min visible:	9x9
+central region:	5x5
+save name:	ZTF18acbzojv_SN_and_late_r.mp4
+------------------------------------------------------------
+Name:		ZTF18aazhwnh_offset
+loc:		233.011667 23.5200056
+mjd:		58288 - 58292, 58360 - 58770
+query:		fid=2 and BETWEEN dates
+within:		0.01 deg
+mjd lc:		58250 - 58800
+t frame:	500 ms
+cutout:		41x41
+min visible:	9x9
+central region:	5x5
+save name:	ZTF18aazhwnh_offset.mp4
+------------------------------------------------------------
