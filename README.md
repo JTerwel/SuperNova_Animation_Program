@@ -1,7 +1,7 @@
-# animate_ZTFims
+# SNAP: SuperNova Animation Program
 ### Show ZTF objects evolving over time by showing the images one after another in an animation
 
-This program (current version: animate_diffims_v5.py) makes an animation of the difference images of the chosen object, and shows additional data as requested by the user. The images are obtained using the ztfquery package. The animation meanwhile is made using matplotlib.animation.FuncAnimation.
+This program makes an animation of the difference images of the chosen object, and shows additional data as requested by the user. The images are obtained using the ztfquery package. The animation is made using matplotlib.animation.FuncAnimation.
 
 ## Basic usage
 The settings are located in the main() function of the program and consist of 4 mandatory parameters (name, ra, dec, sql), and 10 optional parameters. Each parameter is described briefly:
@@ -21,7 +21,9 @@ The settings are located in the main() function of the program and consist of 4 
 * subplot_selection: list, default None. List of init functions for the subplots to include in the animation. If None, all default subplots will be used, except for the lightcurve subplot is no lightcurve is given. Custom subplots can be included (see below).
 * save_name: string, default None. Name under which the animation is to be saved. If None, the default save name will be used: 'name'.mp4 with 'name' being the name parameter.
 
-Please do not forget to change call to the anim_target() object in line 61 according to the optional parameters used. To set the location where the animations are saved, please change the relevant part in line 67.
+Please do not forget to change call to the anim_target() object in line 60 according to the optional parameters used. To set the location where the animations are saved, please change the relevant part in line 66.
+
+After all settings are set, just run snap.py in a terminal and the animation will be constructed.
 
 ## Default subplots
 There are 6 types of subplots that are used by default. They are listed below along with a short description:
@@ -30,8 +32,8 @@ There are 6 types of subplots that are used by default. They are listed below al
 * Midlines (init_midlines, update_midlines): Line plots of the average value of the central columns (right of the image) and rows (above the image). The vertical lines of the green rectangle in the image mark the used rows, and the horizontal lines mark the used columns. (The image needs to be shown as well to see the green rectangle)
 * Compass (init_compass, update_compass): As the axes of the pixels of the image are not necessarily aligned with North and East, this plot shows the actual cardinal directions.
 * Wireframe (init_wireframe, update_wireframe): A 3D version of the image, where height is used instead of a grayscale to show the pixel values. The bottom corner in the wireframe corresponds to the bottom left corner of the image.
-* Text (init_text, update_text): Some general information about the currently shown image: object name, image type (ref / diff), image filter, date (mjd and Gregorian), and image statistics (Peak value, mean value, and standar deviation).
-* Lightcurve (init_lc, update_lc): The associated lightcurve plot of the object. A vertical dashed line shows the date of the current image, and if a lightcurve point is associated to the currently shown image (mjd differs by < 8.64 s & same filter), it is highlighted.
+* Text (init_text, update_text): Some general information about the currently shown image: object name, image type (ref / diff), image filter, exposure time, date (mjd and Gregorian), and image statistics (Peak value, mean value, and standar deviation).
+* Lightcurve (init_lc, update_lc): The associated lightcurve plot of the object. A vertical dashed line shows the date of the current image, and if a lightcurve point is associated to the currently shown image (matched by image filename), it is highlighted.
 
 ## Adding a custom subplot
 Of course there is always the possibility that the subplot you want to be included in the animation is not (exactly) one of those described above. In that case, it is possible to make your own subplot by following the steps detailed below, and adding it to the animation using the subplot_selection parameter.
@@ -104,11 +106,10 @@ The reason subplot is passed into the update function as well is because while t
 As said above, im_dat is a list of different things spit out by the generator function at the beginnig of making the next frame. The contents are as follows:
 * im_dat[0]: A 2D numpy array containing the cutout image after the needed flips and rotations are performed for North to be up and East to be to the right.
 * im_dat[1]: A string stating the type of image ('ref' or 'diff')
-* im_dat[2]: The observation date as an astropy time object (For 'diff' images only, for 'ref' images imdat[2] = ' ')
-* im_dat[3]: The filter in which the observation was taken ('ZTF_g', 'ZTF_r', 'ZTF_i').
-* im_dat[4]: The number of 90 degrees clockwise rotations performed on the cutout image.
-* im_dat[5]: A bool stating if the image was flipped vertically.
-* im_dat[6]: The residual angle between the positive x axis and the East direction in radians.
-* im_dat[7]: The coordinates of the cutout central pixel in the original image.
+* im_dat[2]: The image header.
+* im_dat[3]: The number of 90 degrees clockwise rotations performed on the cutout image.
+* im_dat[4]: A bool stating if the image was flipped vertically.
+* im_dat[5]: The residual angle between the positive x axis and the East direction in radians.
+* im_dat[6]: The coordinates of the cutout central pixel in the original image.
 
 If the custom subplot is constructed according to the recipe above, and the init function is included in the subplot_selection list, it should be added to the animation.
