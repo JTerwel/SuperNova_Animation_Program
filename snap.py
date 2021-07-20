@@ -30,22 +30,22 @@ def main():
 	order.
 	'''
 	#Required parameters
-	name = 'ZTF18aaqeygf'
-	ra = 200.3500294
-	dec = 68.82638685
-	t = time.Time([58260, 58400], format='mjd').jd
-	sql = 'fid=2 and obsjd BETWEEN {} and {}\
-		'.format(t[0], t[1])
+	name = 'ZTF18aaykmzg'
+	ra = 224.8783373
+	dec = 28.1829881
+	t = time.Time([58276, 58281, 58760, 58800], format='mjd').jd
+	sql = 'fid=2 and (obsjd BETWEEN {} and {} or obsjd BETWEEN {} and {})\
+		'.format(t[0], t[1], t[2], t[3])
 	
 	#Optional paramteres, comment out when the default value is used.
 	download_data = False
 	lc_loc = '/Users/terwelj/Documents/ZTFData/marshal/'\
-		'SN_Ia/ZTF18aaqeygf_SNT_1e-08.csv'
-	lc_dates = [58200, 58400]
+		'SN_Ia_sub/ZTF18aaykmzg_SNT_1e-07.csv'
+	lc_dates = [58250, 58850]
 	#search size = 
 	#t_frame = 
 	#cutout_dims = 
-	#min_visible = 
+	min_visible = 15
 	#central_reg = 
 	subplot_selection = [
 		init_im,
@@ -54,11 +54,11 @@ def main():
 		init_wireframe,
 		init_text,
 		init_lc]
-	save_name = 'ZTF18aaqeygf_late_snap.mp4'
+	save_name = 'ZTF18aaykmzg_late_snap.mp4'
 	
 	#Make the target object, adjust depending to the optional parameters used.
 	target = anim_target(name, ra, dec, sql, download_data=download_data,
-		lc_loc=lc_loc, lc_dates=lc_dates,
+		lc_loc=lc_loc, lc_dates=lc_dates, min_visible=min_visible,
 		save_name=save_name)
 
 	#Make and save the animation.
@@ -253,7 +253,6 @@ def animate_step(im_dat, target, subplots, movers, update_funcs, extra_params):
 	for i in range(len(update_funcs)):
 		subplots[i], movers[i], extra_params[i] = update_funcs[i](im_dat,
 			target, subplots[i], movers[i], extra_params[i])
-
 	#Make a flat version of movers to return
 	flat_movers = [item for sublist in movers for item in sublist]
 	return flat_movers
@@ -286,20 +285,21 @@ def get_next_im(target):
 		pix_xy = wcs.all_world2pix([(target.ra, target.dec)], 0)[0]
 
 		#1st test
-		if ((target.min_visible!=0) & (target.min_visible!=(0,0))):
+		if (('/sci/' in i) & (target.min_visible!=0) & (target.min_visible!=(0,0))):
 			try: #Should only succeed if all pixels in this cutout have values
 				dummy = Cutout2D(im.data, pix_xy, target.min_visible,
 					mode='strict')
 			except:		#Can't fully fill min visible region
-				print('Image at obsjd {} rejected due to NaN close to im \
-						center'.format(im.header['OBSJD']))
+				print('Image at obsjd {} rejected due to NaN'\
+					' close to im center'.format(
+					im.header['OBSJD']))
 				continue #Start next i in loop
 
 		cutout = Cutout2D(im.data, pix_xy, target.cutout_dims, mode='partial',
 			wcs=wcs)
 
 		#2nd test
-		if np.max(cutout.data) < 0:
+		if np.nanmax(cutout.data) < 0:
 			print('Image at obsjd {} rejected due to all values being negative\
 				'.format(im.header['OBSJD']))
 			continue
@@ -313,7 +313,7 @@ def get_next_im(target):
 		#Correct image orientation / being mirrored if needed.
 		immat, rots, flip, resid = find_orientation(cutout)
 		im_center = [round(pix_xy[0]), round(pix_xy[1])]
-
+		
 		#yield a list of items required by the subplots
 		yield [immat, imtype, im.header, rots, flip, resid, im_center]
 
@@ -796,7 +796,6 @@ def update_lc(im_dat, target, subplot, mover, extra_args):
 	else:
 		lc_points, mjd = find_fp_points(target.lc, im_dat[2])
 		mover[1].set_xdata([mjd, mjd])
-
 	#Update highlighted points.
 	mover[0].set_offsets(lc_points)
 
