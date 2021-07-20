@@ -286,20 +286,20 @@ def get_next_im(target):
 		pix_xy = wcs.all_world2pix([(target.ra, target.dec)], 0)[0]
 
 		#1st test
-		if ((target.min_visible!=0) & (target.min_visible!=(0,0))):
+		if (('/sci/' in i) & (target.min_visible!=0) & (target.min_visible!=(0,0))):
 			try: #Should only succeed if all pixels in this cutout have values
 				dummy = Cutout2D(im.data, pix_xy, target.min_visible,
 					mode='strict')
 			except:		#Can't fully fill min visible region
-				print('Image at obsjd {} rejected due to NaN close to im \
-						center'.format(im.header['OBSJD']))
+				print('Image at obsjd {} rejected due to NaN'\
+					' close to im center'.format(im.header['OBSJD']))
 				continue #Start next i in loop
 
 		cutout = Cutout2D(im.data, pix_xy, target.cutout_dims, mode='partial',
 			wcs=wcs)
 
 		#2nd test
-		if np.max(cutout.data) < 0:
+		if np.nanmax(cutout.data) < 0:
 			print('Image at obsjd {} rejected due to all values being negative\
 				'.format(im.header['OBSJD']))
 			continue
