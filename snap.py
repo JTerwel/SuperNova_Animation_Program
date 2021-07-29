@@ -30,18 +30,18 @@ def main():
 	order.
 	'''
 	#Required parameters
-	name = 'ZTF18aaqeygf'
-	ra = 200.3500294
-	dec = 68.82638685
-	t = time.Time([58260, 58400], format='mjd').jd
-	sql = 'fid=2 and obsjd BETWEEN {} and {}\
-		'.format(t[0], t[1])
+	name = 'ZTF18aaykmzg'
+	ra = 224.8783373
+	dec = 28.1829881
+	t = time.Time([58276, 58281, 58760, 58800], format='mjd').jd
+	sql = 'fid=2 and (obsjd BETWEEN {} and {} or obsjd BETWEEN {} and {})\
+		'.format(t[0], t[1], t[2], t[3])
 	
 	#Optional paramteres, comment out when the default value is used.
 	download_data = False
 	lc_loc = '/Users/terwelj/Documents/ZTFData/marshal/'\
-		'SN_Ia/ZTF18aaqeygf_SNT_1e-08.csv'
-	lc_dates = [58200, 58400]
+		'SN_Ia_sub/ZTF18aaykmzg_SNT_1e-07.csv'
+	lc_dates = [58250, 58800]
 	#search size = 
 	#t_frame = 
 	#cutout_dims = 
@@ -54,7 +54,7 @@ def main():
 		init_wireframe,
 		init_text,
 		init_lc]
-	save_name = 'ZTF18aaqeygf_late_snap.mp4'
+	save_name = 'ZTF18aaykmzg_late_snap.mp4'
 	
 	#Make the target object, adjust depending to the optional parameters used.
 	target = anim_target(name, ra, dec, sql, download_data=download_data,
@@ -166,8 +166,8 @@ class anim_target:
 			print('Warning: No lightcurve location given, returning None')
 			return None
 		lc = pd.read_csv(self.lc_loc, header=0,
-			usecols=['obsmjd', 'filename', 'filter', 'upper_limit', 'mag', 'mag_err',
-					'target_x', 'target_y'])
+			usecols=['obsmjd', 'filename', 'filter', 'qid', 'upper_limit',
+					'mag', 'mag_err', 'target_x', 'target_y'])
 		lc.rename(columns={'filter':'obs_filter'}, inplace=True)#Avoid confusion
 		lc_region = lc[(lc.obsmjd>=min(self.lc_dates))
 					& (lc.obsmjd<=max(self.lc_dates))]
@@ -309,7 +309,7 @@ def get_next_im(target):
 			imtype = 'ref'
 		else:
 			imtype = 'dif'
-		
+
 		#Correct image orientation / being mirrored if needed.
 		immat, rots, flip, resid = find_orientation(cutout)
 		im_center = [round(pix_xy[0]), round(pix_xy[1])]
@@ -878,7 +878,7 @@ def find_fp_loc(lc, im_dat, cutout_dims):
 		date = time.Time(im_dat[2]['OBSJD'], format='jd')
 
 	#Find all lc points derived from this image
-	good_points = lc[lc.filename == im_dat[2]['ORIGNAME']]
+	good_points = lc[(lc.filename==im_dat[2]['ORIGNAME']) & (lc.qid==im_dat[2]['QID'])]
 	if len(good_points)==0:	#no matches
 		return [[None, None]]
 	xvals = good_points.target_x.to_numpy().transpose()	#Put in simple arrays
@@ -921,16 +921,16 @@ def find_fp_points(lc, header):
 		mjd (Time): mjd of the image
 	'''
 	#Check if a lc is given and there is a date from the reference image.
-	if lc is None:
-		return [[],[]]
 	date = time.Time(header['OBSJD'], format='jd')
+	if lc is None:
+		return [[],[]], date.mjd
 	im_filter = header['FILTER']
 
 	#Find all lc points originating from this image
-	good_dates = lc[lc.filename==header['ORIGNAME']]
+	good_dates = lc[(lc.filename==header['ORIGNAME']) & (lc.qid==header['QID'])]
 	if len(good_dates)==0:	#no matches
-		return [[],[]]
-
+		return [[],[]], date.mjd
+	
 	#List all good data points, take mag when possible, else take upper_limit.
 	vals = []
 	for i in range(len(good_dates[good_dates.obs_filter==im_filter])):
