@@ -13,7 +13,7 @@ from matplotlib.patches import Rectangle
 import matplotlib.gridspec as gridspec
 import pandas as pd
 from ztfquery import query
-from astropy.io import fits
+from astropy.io import fits, ascii
 from astropy.nddata import Cutout2D
 from astropy.wcs import WCS
 from astropy import time
@@ -30,18 +30,19 @@ def main():
 	order.
 	'''
 	#Required parameters
-	name = 'ZTF18aaykmzg'
-	ra = 224.8783373
-	dec = 28.1829881
-	t = time.Time([58276, 58281, 58760, 58800], format='mjd').jd
-	sql = 'fid=2 and (obsjd BETWEEN {} and {} or obsjd BETWEEN {} and {})\
-		'.format(t[0], t[1], t[2], t[3])
+	name = 'ZTF18actuhrs'
+	ra = 206.6633164
+	dec = -9.6434134
+	t = time.Time([58450, 59100], format='mjd').jd
+	sql = 'fid=2 and (obsjd BETWEEN {} and {})\
+		'.format(t[0], t[1])
 	
 	#Optional paramteres, comment out when the default value is used.
 	download_data = False
-	lc_loc = '/Users/terwelj/Documents/ZTFData/marshal/'\
-		'SN_Ia_sub/ZTF18aaykmzg_SNT_1e-07.csv'
-	lc_dates = [58250, 58800]
+	#lc_loc = '/Users/terwelj/Documents/ZTFData/marshal/'\
+	#	'SN_Ia_sub/ZTF18aaykmzg_SNT_1e-07.csv'
+	lc_loc = '/Users/terwelj/Projects/testing_grounds/ztf18actuhrs_SNT_1e-08_new.csv'
+	lc_dates = [58400, 59100]
 	#search size = 
 	#t_frame = 
 	#cutout_dims = 
@@ -51,15 +52,18 @@ def main():
 		init_im,
 		init_midlines,
 		init_compass,
-		init_wireframe,
-		init_text,
+		#init_wireframe,
+		#init_text,
+		init_spec,
 		init_lc]
-	save_name = 'ZTF18aaykmzg_late_snap.mp4'
+	speclist_loc = '/Users/terwelj/Projects/Late-time_signals/Spectra/ZTF18actuhrs/spec_list.csv'
+	#spec_ylim = (-2, 4)
+	save_name = 'ZTF18actuhrs_spec.mp4'
 	
 	#Make the target object, adjust depending to the optional parameters used.
 	target = anim_target(name, ra, dec, sql, download_data=download_data,
-		lc_loc=lc_loc, lc_dates=lc_dates,
-		save_name=save_name)
+		lc_loc=lc_loc, lc_dates=lc_dates, subplot_selection=subplot_selection,
+		speclist_loc=speclist_loc, save_name=save_name)
 
 	#Make and save the animation.
 	anim = animate_observations(target)
@@ -92,13 +96,16 @@ class anim_target:
 		save_name (string): Name under which the animation is saved.
 		lc (DataFrame): Lightcurve made using lc_loc & lc_dates.
 		im_locs (list): Location of all specified images (after downloading).
+		speclist (DataFrame / None): if specified, lists spectra to show
+		spec_ylim (tuple): Shown region in scaled flux direction of spec
 	'''
 
 	def __init__(
 			self, name, ra, dec, sql, download_data=False, lc_loc=None,
 			lc_dates=[58119, 59215], search_size=0.01, t_frame=500,
 			cutout_dims=41, min_visible=9, central_reg=5,
-			subplot_selection=None, save_name=None):
+			subplot_selection=None, speclist_loc=None, spec_ylim=(-2,4),
+			save_name=None):
 		'''
 		The constructor for this class.
 
@@ -119,6 +126,8 @@ class anim_target:
 			central_reg (int / tuple): nr of cols & rows considered for midline
 				plots, internally tuple (height, width).
 			subplot_selection (list): Custom subplot initiator list to be used.
+			speclist_loc (string): csv file location detailing spectra to show
+			spec_ylim (tuple): Shown region in scaled flux direction of spec
 			save_name (string): Name under which the animation is saved.
 		'''
 		self.name = name
@@ -154,6 +163,14 @@ class anim_target:
 				init_wireframe, init_text, init_lc]
 		self.lc = self.get_lc() if self.lc_loc is not None else None
 		self.im_locs = self.download_images()
+		if speclist_loc is None:
+			self.speclist = None
+			if init_spec in self.init_list:
+				self.init_list.remove(init_spec)
+				print('No list of spectra given, so no spectrum will be shown')
+		else:
+			self.speclist = pd.read_csv(speclist_loc, header=0)
+		self.spec_ylim = spec_ylim
 
 	def get_lc(self):
 		'''
@@ -341,7 +358,6 @@ def init_im(target, fig, gs, subplots, movers, update_funcs, extra_params):
 		update_funcs (list): Updated list of update_funcs.
 		extra_params (list): Updated list of extra_params.
 	'''
-
 	#Initiate the subplot and colorbar.
 	ax_im = fig.add_subplot(gs[11:, :50])
 	ax_cb = fig.add_axes([0.1, 0.11, 0.015, 0.625])
@@ -423,7 +439,6 @@ def init_midlines(target, fig, gs, subplots, movers, update_funcs,
 		update_funcs (list): Updated list of update_funcs.
 		extra_params (list): Updated list of extra_params.
 	'''
-
 	#Initiate
 	ax_line_hor = fig.add_subplot(gs[:10, :50])
 	ax_line_ver = fig.add_subplot(gs[11:, 50:60])
@@ -515,7 +530,6 @@ def init_compass(target, fig, gs, subplots, movers, update_funcs, extra_params):
 		update_funcs (list): Updated list of update_funcs.
 		extra_params (list): Updated list of extra_params.
 	'''
-
 	#Initiate
 	ax_ne = fig.add_subplot(gs[:10, 50:60])
 
@@ -596,7 +610,6 @@ def init_wireframe(target, fig, gs, subplots, movers, update_funcs,
 		update_funcs (list): Updated list of update_funcs.
 		extra_params (list): Updated list of extra_params.
 	'''
-
 	#Initiate
 	ax_wire = fig.add_subplot(gs[:28, 65:100], projection='3d')
 
@@ -669,7 +682,6 @@ def init_text(target, fig, gs, subplots, movers, update_funcs, extra_params):
 		update_funcs (list): Updated list of update_funcs.
 		extra_params (list): Updated list of extra_params.
 	'''
-
 	#Initiate
 	ax_text = fig.add_subplot(gs[:28, 101:])
 
@@ -739,7 +751,6 @@ def init_lc(target, fig, gs, subplots, movers, update_funcs, extra_params):
 		update_funcs (list): Updated list of update_funcs.
 		extra_params (list): Updated list of extra_params.
 	'''
-
 	#Initiate
 	ax_lc = fig.add_subplot(gs[31:, 67:])
 
@@ -759,6 +770,9 @@ def init_lc(target, fig, gs, subplots, movers, update_funcs, extra_params):
 	ax_lc.set_ylim(23, 15)
 	ax_lc.set_xlabel('mjd')
 	ax_lc.set_ylabel('mag')
+	if target.speclist is not None: #Add spectra locations
+		for i in range(len(target.speclist)):
+			ax_lc.axvline(target.speclist.mjd.iloc[i], ls=':', color='gray')
 
 	#Set changing parts
 	lc = ax_lc.scatter([], [], edgecolors='k', facecolors='none', linewidths=3,
@@ -799,6 +813,79 @@ def update_lc(im_dat, target, subplot, mover, extra_args):
 
 	#Update highlighted points.
 	mover[0].set_offsets(lc_points)
+
+	#Return updated subplot
+	return subplot, mover, extra_args
+
+def init_spec(target, fig, gs, subplots, movers, update_funcs, extra_params):
+	'''
+	Initiate the spectrum plot.
+
+	Parameters:
+		target (anim_target): Object about to be animated.
+		fig (figure): Figure on which the subplot is added.
+		gs (GridSpec): Gridspec object associated with fig.
+		subplots (list): List of subplots already in fig.
+		movers (list): List of moving objects in subplots already in fig.
+		update_funcs (list): List of update functions associated with subplots.
+		extra_params (list): List of extra parameters in the update functions.
+
+	Returns:
+		subplots (list): Updated list of subplots.
+		movers (list): Updated list of movers.
+		update_funcs (list): Updated list of update_funcs.
+		extra_params (list): Updated list of extra_params.
+	'''
+	#Initiate
+	ax_spec = fig.add_subplot(gs[:29, 67:])
+
+	#Set static parts
+	ax_spec.set_xlabel(r'Observed Wavelength ($\AA$)')
+	ax_spec.set_ylabel('Normalized flux')
+	ax_spec.set_xlim(target.speclist.wl_min.min(), target.speclist.wl_max.max())
+	ax_spec.set_ylim(target.spec_ylim)
+	ax_spec.xaxis.tick_top()
+	ax_spec.xaxis.set_label_position('top')
+
+	#Set changing parts
+	spec_line, = ax_spec.plot([], [], 'b')	#Placeholder
+
+	#Add to the lists and return.
+	subplots.append([ax_spec])
+	movers.append([spec_line])
+	update_funcs.append(update_spec)
+	extra_params.append([0]) #Value of next_spec
+	return subplots, movers, update_funcs, extra_params
+
+def update_spec(im_dat, target, subplot, mover, extra_args):
+	'''
+	Update the spectrum if needed.
+
+	Parameters:
+		im_dat ([immat, imtype, header, rots, flip, resid, im_center]):
+			Required image data.
+		target (anim_target): Object to animate.
+		subplot ([ax_spec]): Subplots to be updated.
+		mover ([spec_line]): Parts of the subplot that need to be updated.
+		extra_args ([next_spec]): Extra arguments that are needed.
+
+	Returns:
+		subplot (list): Updated version of the subplot given.
+		mover (list): Updated version of the mover ginve.
+		extra_args (list): Updated version of the extra args given.
+	'''
+	#Determine if spectrum needs to be updated
+	if ((extra_args[0]<len(target.speclist)) & (im_dat[1]=='dif')):
+		date = time.Time(im_dat[2]['OBSJD'], format='jd').mjd
+		if date > target.speclist.mjd.iloc[extra_args[0]]: #only for dif images
+			#Need to update spectrum & extra_args[0]
+			spec = ascii.read(target.speclist.fileloc.iloc[extra_args[0]])
+			mover[0].set_data(spec.columns[0],
+				spec.columns[1]/np.mean(spec.columns[1]))
+			subplot[0].set_title('Instrument: {}  mjd: {}'.format(
+				target.speclist.instrument.iloc[extra_args[0]], 
+				target.speclist.mjd.iloc[extra_args[0]])) #Not sure if this works
+			extra_args[0] = extra_args[0]+1
 
 	#Return updated subplot
 	return subplot, mover, extra_args
